@@ -21,6 +21,8 @@ pub enum DistanceMetric {
     /// The sum of all absolute differences between each dimension of two points.
     /// Also known as L1 norm or city block.
     Manhattan,
+    /// Consine similarity
+    Consine
 }
 
 impl DistanceMetric {
@@ -31,9 +33,11 @@ impl DistanceMetric {
             Self::Euclidean => euclidean_distance(a, b),
             Self::Haversine => haversine_distance(a, b),
             Self::Manhattan => manhattan_distance(a, b),
+            Self::Consine => consine_distance(a, b),
         }
     }
 }
+
 
 pub(crate) fn get_dist_func<T: Float>(metric: &DistanceMetric) -> impl Fn(&[T], &[T]) -> T {
     match metric {
@@ -42,6 +46,7 @@ pub(crate) fn get_dist_func<T: Float>(metric: &DistanceMetric) -> impl Fn(&[T], 
         DistanceMetric::Euclidean => euclidean_distance,
         DistanceMetric::Haversine => haversine_distance,
         DistanceMetric::Manhattan => manhattan_distance,
+        DistanceMetric::Consine => consine_distance,
     }
 }
 
@@ -66,6 +71,15 @@ pub(crate) fn haversine_distance<T: Float>(a: &[T], b: &[T]) -> T {
     let c = T::from(2.0).unwrap() * a.sqrt().asin();
 
     r * c
+}
+
+pub(crate) fn consine_distance<T: Float>(a: &[T], b: &[T]) -> T {
+    assert_inputs(a, b);
+    let dot_product = a.iter().zip(b.iter()).map(|(x, y)| (*x) * (*y)).fold(T::zero(), std::ops::Add::add); 
+    let a_norm = a.iter().map(|x| (*x) * (*x)).fold(T::zero(), std::ops::Add::add).sqrt();
+    let b_norm = b.iter().map(|x| (*x) * (*x)).fold(T::zero(), std::ops::Add::add).sqrt();
+    let cos_theta = dot_product / (a_norm * b_norm);
+    T::from(1.0).unwrap() - cos_theta
 }
 
 pub(crate) fn euclidean_distance<T: Float>(a: &[T], b: &[T]) -> T {
